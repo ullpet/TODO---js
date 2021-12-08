@@ -29,9 +29,10 @@
         };
     }
 
-    function createTodoList() {
+    function createTodoList(listKey) {
         let list = document.createElement('ul');
         list.classList.add('list-group');
+        list.setAttribute('id', listKey);
         return list;
     }
 
@@ -81,7 +82,7 @@
         return false;
     }
 
-    function createTodoApp(container, title='Список дел', defaultTodos = [{
+    function createTodoApp(container, title='Список дел', listKey, defaultTodos = [{
         name: 'Обнять Бри',
         done: true
     },
@@ -98,7 +99,7 @@
 
         let todoAppTitle = createAppTitle(title);
         let todoItemForm = createTodoItemForm();
-        let todoList = createTodoList();
+        let todoList = createTodoList(listKey);
 
         container.append(todoAppTitle);
         container.append(todoItemForm.form);
@@ -106,19 +107,21 @@
 
         for (let task of defaultTodos) {
             if (isPageRefreshed()){
-                localStorage.setItem(task.name, JSON.stringify(task.done));
+                localStorage.setItem(JSON.stringify[task.name, listKey], JSON.stringify(task.done));
             }
         }
 
         for (let i = 0; i < localStorage.length; i++) { //выгрузка заданий из localStorage
             let key = localStorage.key(i);
             let value = JSON.parse(localStorage.getItem(key));
-            let todoItem = createTodoItem(key);
+            let todoItem = createTodoItem(JSON.parse(key)[0]);
             if (value) {
                 todoItem.item.classList.add('list-group-item-success');
             } else {todoItem.item.classList.remove('list-group-item-success')};
             doneAndDelete(todoItem, key, value);
-            todoList.append(todoItem.item);
+            if (JSON.parse(key)[1] === todoList.id) {
+                todoList.append(todoItem.item);
+            }
         }
 
         todoItemForm.form.addEventListener('input', function(){ //отключение и включение кнопки ввести дело если поле пустое
@@ -132,12 +135,17 @@
 
             let todoItemName = todoItemForm.input.value;
             let todoItem = createTodoItem(todoItemName);
-            localStorage.setItem(todoItemName, false);
+
+            todoItem.item.setAttribute('id', listKey);
+
+            localStorage.setItem(JSON.stringify([todoItemName, listKey]), false);
             doneAndDelete(todoItem, todoItemName, false);
+
+
             
-
-
-            todoList.append(todoItem.item);
+            if (todoItem.item.id === todoList.id) {
+                todoList.append(todoItem.item);
+            }
             todoItemForm.input.value = '';
             todoItemForm.button.classList.add('disabled');
         });
