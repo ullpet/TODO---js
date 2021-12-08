@@ -62,31 +62,23 @@
         };
     }
 
-    function doneAndDelete(item, itemName) {
-        let isDone = false;
-        let isDeleted = false;
+    function doneAndDelete(item, itemName, isDone) {
         item.doneButton.addEventListener('click', function(){
             item.item.classList.toggle('list-group-item-success');
             isDone = !isDone;
-            let objectItem = {
-                name: itemName,
-                done: isDone
-            }
-            localStorage.setItem(itemName, JSON.stringify(objectItem));//заменить done
+            localStorage.setItem(itemName, isDone);
         });
 
         item.deleteButton.addEventListener('click', function(){
             if (confirm('Вы уверены?')) {
                 item.item.remove();
-                isDeleted = !isDeleted;
                 localStorage.removeItem(itemName);
             }
         });
-
-        return {
-            isDone,
-            isDeleted
-        };
+    }
+    
+    function isPageRefreshed() {
+        return false;
     }
 
     function createTodoApp(container, title='Список дел', defaultTodos = [{
@@ -112,42 +104,39 @@
         container.append(todoItemForm.form);
         container.append(todoList);
 
-        for (let task of defaultTodos) { //вынести в отедльную функцию createItemFromObject -- использовать функцию при доставании из сторэдж
-            let todoItemDefault = createTodoItem(task.name);
-            if (task.done) {
-                todoItemDefault.item.classList.add('list-group-item-success');
+        for (let task of defaultTodos) {
+            if (isPageRefreshed()){
+                localStorage.setItem(task.name, JSON.stringify(task.done));
             }
-            localStorage.setItem(task.name, JSON.stringify(task));
-            doneAndDelete(todoItemDefault, task.name);
-            todoList.append(todoItemDefault.item); //вынести в отдельную функцию вместе с дефолтным массивом
         }
 
-        todoItemForm.form.addEventListener('input', function(){
+        for (let i = 0; i < localStorage.length; i++) { //выгрузка заданий из localStorage
+            let key = localStorage.key(i);
+            let value = JSON.parse(localStorage.getItem(key));
+            let todoItem = createTodoItem(key);
+            if (value) {
+                todoItem.item.classList.add('list-group-item-success');
+            } else {todoItem.item.classList.remove('list-group-item-success')};
+            doneAndDelete(todoItem, key, value);
+            todoList.append(todoItem.item);
+        }
+
+        todoItemForm.form.addEventListener('input', function(){ //отключение и включение кнопки ввести дело если поле пустое
            if(todoItemForm.input.value){
                todoItemForm.button.classList.remove('disabled');
-           } else {todoItemForm.button.classList.add('disabled');} //вынести в отдельную функцию disableButton
+           } else {todoItemForm.button.classList.add('disabled');} 
         });
 
         todoItemForm.form.addEventListener('submit',function(e){
             e.preventDefault();
 
-            //let todoItem = createTodoItem(todoItemForm.input.value);
-
-           // doneAndDelete(todoItem);
-/////////////////////////////////
-            let todoItemObject = {
-                name: todoItemForm.input.value,
-                done: false
-            };
-
-            let todoItem = createTodoItem(todoItemObject.name);
-            doneAndDelete(todoItem, todoItemObject.name);
-            
-            localStorage.setItem(todoItemObject.name, JSON.stringify(todoItemObject));
-
+            let todoItemName = todoItemForm.input.value;
+            let todoItem = createTodoItem(todoItemName);
+            localStorage.setItem(todoItemName, false);
+            doneAndDelete(todoItem, todoItemName, false);
             
 
-//////////////////////////////////////////
+
             todoList.append(todoItem.item);
             todoItemForm.input.value = '';
             todoItemForm.button.classList.add('disabled');
@@ -155,6 +144,5 @@
     }
 
     window.createTodoApp = createTodoApp;
-
-
+    window.onbeforeunload = isPageRefreshed();
 })();
