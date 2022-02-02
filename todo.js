@@ -145,5 +145,3 @@
 
     window.createTodoApp = createTodoApp;
 })();
-
-
